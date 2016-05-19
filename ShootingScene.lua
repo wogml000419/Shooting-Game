@@ -4,11 +4,12 @@
 
 local composer = require( "composer" )
 local physics = require( "physics" )
+local enemy = require( "enemy" )
 local scene = composer.newScene()
 
 ---------------------------------------------------------------------------------
-local function fire()
-	local temp = display.newCircle(player.x, player.y, 5)
+local function fire()																												--총알 발사 함수
+	local temp = display.newCircle(player.x, player.y, 5)											--플레이어 위치에 총알 생성
 	physics.addBody(temp, "dynamic", {radius = temp.radius, isSensor = true})
 	temp.isBullet = true
 	temp:setLinearVelocity(0, -400)
@@ -30,14 +31,19 @@ end
 local function enemyCollisionDetect( event )
 	if event.phase == "began" then
 		if event.other.id == "bullet" then
-		enemy1.HP = enemy1.HP - 1
-		print(enemy1.HP)
+		event.target.HP = event.target.HP - 1
+		print(event.target.HP)
 		timer.cancel(event.other.timer)
-
-		 event.other:removeSelf()
+		event.other:removeSelf()
 		event.other = nil
+		end
 	end
 end
+
+local function allMoving( event )
+	enemy1:moving( 180, 3 )
+	enemy2:moving( 180, 2 )
+	enemy3:moving( 180, 1 )
 end
 ------------------------------------------------------------------------------------
 
@@ -62,16 +68,20 @@ function scene:create( event )
 	sceneGroup:insert(UIGroup)
 
 	player = display.newImage(playerGroup, "image/Icon-60.png", display.contentCenterX, display.contentCenterY)
-	enemy1 = display.newImage(enemyGroup, "image/뒤로가기.png", display.contentCenterX, 30)
-
 	physics.addBody(player, "dynamic", {isSensor = true})
-	physics.addBody(enemy1, "dynamic")
+	player.canMove = true
 
+	enemy1 = enemy.New(enemyGroup, "image/뒤로가기.png", display.contentCenterX, 30)
+	enemy1:makeBody()
 	enemy1.HP = 100
-	-- Called when the scene's view does not exist.
-	--
-	-- INSERT code here to initialize the scene
-	-- e.g. add display objects to 'sceneGroup', add touch listeners, etc.
+
+	enemy2 = enemy.New(enemyGroup, "image/뒤로가기.png", display.contentWidth * (1/4), 30)
+	enemy2:makeBody()
+	enemy2.HP = 100
+
+	enemy3 = enemy.New(enemyGroup, "image/뒤로가기.png", display.contentWidth * (3/4), 30)
+	enemy3:makeBody()
+	enemy3.HP = 100
 end
 
 function scene:show( event )
@@ -85,13 +95,14 @@ function scene:show( event )
 
 		Runtime:addEventListener("enterFrame", fire)
 		Runtime:addEventListener("touch", moveCharacter)
-		enemy1:addEventListener("collision", enemyCollisionDetect)
-		-- Called when the scene is still off screen and is about to move on screen
+		Runtime:addEventListener("enterFrame", allMoving)
+
+		enemy1.resource:addEventListener("collision", enemyCollisionDetect)
+		enemy2.resource:addEventListener("collision", enemyCollisionDetect)
+		enemy3.resource:addEventListener("collision", enemyCollisionDetect)
+
 	elseif phase == "did" then
-		-- Called when the scene is now on screen
-		--
-		-- INSERT code here to make the scene come alive
-		-- e.g. start timers, begin animation, play audio, etc.
+
 	end
 end
 
@@ -100,12 +111,9 @@ function scene:hide( event )
 	local phase = event.phase
 
 	if event.phase == "will" then
-		-- Called when the scene is on screen and is about to move off screen
-		--
-		-- INSERT code here to pause the scene
-		-- e.g. stop timers, stop animation, unload sounds, etc.)
+
 	elseif phase == "did" then
-		-- Called when the scene is now off screen
+
 	end
 end
 
@@ -113,10 +121,6 @@ end
 function scene:destroy( event )
 	local sceneGroup = self.view
 
-	-- Called prior to the removal of scene's "view" (sceneGroup)
-	--
-	-- INSERT code here to cleanup the scene
-	-- e.g. remove display objects, remove touch listeners, save state, etc.
 end
 
 ---------------------------------------------------------------------------------
